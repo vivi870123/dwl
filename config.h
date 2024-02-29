@@ -1,14 +1,25 @@
+#define TERMINAL "footclient"
+#define BROWSER "org.mozilla.firefox"
+
+#define ALT   WLR_MODIFIER_LOGO
+#define SUPER WLR_MODIFIER_ALT
+#define SHIFT WLR_MODIFIER_SHIFT
+#define CTRL  WLR_MODIFIER_CTRL
+#define CAPS  WLR_MODIFIER_MOD3
+#define MDEIA SUPER|CTRL
+
 /* Taken from https://github.com/djpohly/dwl/issues/466 */
 #define COLOR(hex)    { ((hex >> 24) & 0xFF) / 255.0f, \
                         ((hex >> 16) & 0xFF) / 255.0f, \
                         ((hex >> 8) & 0xFF) / 255.0f, \
                         (hex & 0xFF) / 255.0f }
+
 /* appearance */
 static const int sloppyfocus               = 0;  /* focus follows mouse */
 static const int bypass_surface_visibility = 0;  /* 1 means idle inhibitors will disable idle tracking even if it's surface isn't visible  */
 static const int smartgaps                 = 1;  /* 1 means no outer gap when there is only one window */
-static const int monoclegaps               = 1;  /* 1 means outer gaps in monocle layout */
-static const unsigned int borderpx         = 1;  /* border pixel of windows */
+static const int monoclegaps               = 0;  /* 1 means outer gaps in monocle layout */
+static const unsigned int borderpx         = 2;  /* border pixel of windows */
 static const unsigned int gappih           = 10; /* horiz inner gap between windows */
 static const unsigned int gappiv           = 10; /* vert inner gap between windows */
 static const unsigned int gappoh           = 10; /* horiz outer gap between windows and screen edge */
@@ -36,9 +47,6 @@ static const char *const autostart[] = {
 
 static const Rule rules[] = {
 	/* app_id     title       tags mask     isfloating  isterm  noswallow  monitor */
-	/* examples:
-	{ "Gimp",     NULL,       0,            1,          0,      1,         -1 },
-	*/
 	{ "firefox",  NULL,       1 << 8,       0,          0,      1,         -1 },
 	{ "foot",     NULL,       0,            0,          1,      1,         -1 },
 };
@@ -66,11 +74,8 @@ static const MonitorRule monrules[] = {
 
 /* keyboard */
 static const struct xkb_rule_names xkb_rules = {
-	/* can specify fields: rules, model, layout, variant, options */
-	/* example:
+    .layout = "gb",
 	.options = "ctrl:nocaps",
-	*/
-	.options = NULL,
 };
 
 static const int repeat_rate = 25;
@@ -84,133 +89,143 @@ static const int natural_scrolling = 1;
 static const int disable_while_typing = 1;
 static const int left_handed = 0;
 static const int middle_button_emulation = 0;
-/* You can choose between:
-LIBINPUT_CONFIG_SCROLL_NO_SCROLL
-LIBINPUT_CONFIG_SCROLL_2FG
-LIBINPUT_CONFIG_SCROLL_EDGE
-LIBINPUT_CONFIG_SCROLL_ON_BUTTON_DOWN
-*/
 static const enum libinput_config_scroll_method scroll_method = LIBINPUT_CONFIG_SCROLL_2FG;
-
-/* You can choose between:
-LIBINPUT_CONFIG_CLICK_METHOD_NONE
-LIBINPUT_CONFIG_CLICK_METHOD_BUTTON_AREAS
-LIBINPUT_CONFIG_CLICK_METHOD_CLICKFINGER
-*/
 static const enum libinput_config_click_method click_method = LIBINPUT_CONFIG_CLICK_METHOD_BUTTON_AREAS;
-
-/* You can choose between:
-LIBINPUT_CONFIG_SEND_EVENTS_ENABLED
-LIBINPUT_CONFIG_SEND_EVENTS_DISABLED
-LIBINPUT_CONFIG_SEND_EVENTS_DISABLED_ON_EXTERNAL_MOUSE
-*/
 static const uint32_t send_events_mode = LIBINPUT_CONFIG_SEND_EVENTS_ENABLED;
-
-/* You can choose between:
-LIBINPUT_CONFIG_ACCEL_PROFILE_FLAT
-LIBINPUT_CONFIG_ACCEL_PROFILE_ADAPTIVE
-*/
 static const enum libinput_config_accel_profile accel_profile = LIBINPUT_CONFIG_ACCEL_PROFILE_ADAPTIVE;
 static const double accel_speed = 0.0;
-/* You can choose between:
-LIBINPUT_CONFIG_TAP_MAP_LRM -- 1/2/3 finger tap maps to left/right/middle
-LIBINPUT_CONFIG_TAP_MAP_LMR -- 1/2/3 finger tap maps to left/middle/right
-*/
 static const enum libinput_config_tap_button_map button_map = LIBINPUT_CONFIG_TAP_MAP_LRM;
 
-/* If you want to use the windows key for MODKEY, use WLR_MODIFIER_LOGO */
-#define MODKEY WLR_MODIFIER_ALT
-
 #define TAGKEYS(KEY,TAG) \
-	{ MODKEY,                    KEY,            view,            {.ui = 1 << TAG} }, \
-	{ MODKEY|WLR_MODIFIER_CTRL,  KEY,            toggleview,      {.ui = 1 << TAG} }, \
-	{ MODKEY|WLR_MODIFIER_SHIFT, KEY,            tag,             {.ui = 1 << TAG} }, \
-	{ MODKEY|WLR_MODIFIER_CTRL|WLR_MODIFIER_SHIFT,KEY,toggletag,  {.ui = 1 << TAG} }
+	{ SUPER,                    KEY,            view,            {.ui = 1 << TAG} }, \
+	{ SUPER|CTRL,  KEY,            toggleview,      {.ui = 1 << TAG} }, \
+	{ SUPER|SHIFT, KEY,            tag,             {.ui = 1 << TAG} }, \
+	{ SUPER|CTRL|SHIFT,KEY,toggletag,  {.ui = 1 << TAG} }
 
 /* helper for spawning shell commands in the pre dwm-5.0 fashion */
 #define SHCMD(cmd) { .v = (const char*[]){ "/bin/sh", "-c", cmd, NULL } }
 
 /* commands */
-static const char *termcmd[] = { "foot", NULL };
+static const char *termcmd[] = { TERMINAL, NULL };
 static const char *menucmd[] = { "bemenu-run", NULL };
+
 
 #include "keys.h"
 #include "shiftview.c"
 
 static const Key keys[] = {
 	/* Note that Shift changes certain key codes: c -> C, 2 -> at, etc. */
-	/* modifier                  key          function        argument */
-	{ MODKEY,                                      Key_p,              spawn,            {.v = menucmd} },
-	{ MODKEY|WLR_MODIFIER_SHIFT,                   Key_Return,         spawn,            {.v = termcmd} },
-	{ MODKEY,                                      Key_b,              togglebar,        {0}},
-	{ MODKEY,                                      Key_j,              focusstack,       {.i = +1} },
-	{ MODKEY,                                      Key_k,              focusstack,       {.i = -1} },
-	{ MODKEY|WLR_MODIFIER_SHIFT,                   Key_j,          movestack,      {.i = +1} },
-	{ MODKEY|WLR_MODIFIER_SHIFT,                   Key_k,          movestack,      {.i = -1} },
-	{ MODKEY,                                      Key_i,              incnmaster,       {.i = +1} },
-	{ MODKEY,                                      Key_d,              incnmaster,       {.i = -1} },
-	{ MODKEY,                                      Key_h,              setmfact,         {.f = -0.05f} },
-	{ MODKEY,                                      Key_l,              setmfact,         {.f = +0.05f} },
-	{ MODKEY|WLR_MODIFIER_LOGO,                    Key_h,          incgaps,          {.i = +1 } },
-	{ MODKEY|WLR_MODIFIER_LOGO,                    Key_l,          incgaps,          {.i = -1 } },
-	{ MODKEY|WLR_MODIFIER_LOGO|WLR_MODIFIER_SHIFT, Key_h,          incogaps,         {.i = +1 } },
-	{ MODKEY|WLR_MODIFIER_LOGO|WLR_MODIFIER_SHIFT, Key_l,          incogaps,         {.i = -1 } },
-	{ MODKEY|WLR_MODIFIER_LOGO|WLR_MODIFIER_CTRL,  Key_h,          incigaps,         {.i = +1 } },
-	{ MODKEY|WLR_MODIFIER_LOGO|WLR_MODIFIER_CTRL,  Key_l,          incigaps,         {.i = -1 } },
-	{ MODKEY|WLR_MODIFIER_LOGO,                    Key_0,          togglegaps,       {0} },
-	{ MODKEY|WLR_MODIFIER_LOGO|WLR_MODIFIER_SHIFT, Key_parenright, defaultgaps,      {0} },
-	{ MODKEY,                                      Key_y,          incihgaps,        {.i = +1 } },
-	{ MODKEY,                                      Key_o,          incihgaps,        {.i = -1 } },
-	{ MODKEY|WLR_MODIFIER_CTRL,                    Key_y,          incivgaps,        {.i = +1 } },
-	{ MODKEY|WLR_MODIFIER_CTRL,                    Key_o,          incivgaps,        {.i = -1 } },
-	{ MODKEY|WLR_MODIFIER_LOGO,                    Key_y,          incohgaps,        {.i = +1 } },
-	{ MODKEY|WLR_MODIFIER_LOGO,                    Key_o,          incohgaps,        {.i = -1 } },
-	{ MODKEY|WLR_MODIFIER_SHIFT,                   Key_y,          incovgaps,        {.i = +1 } },
-	{ MODKEY|WLR_MODIFIER_SHIFT,                   Key_o,          incovgaps,        {.i = -1 } },
-	{ MODKEY,                                      Key_Return,         zoom,             {0} },
-	{ MODKEY,                                      Key_Tab,            view,             {0} },
-	{ MODKEY,                                      Key_a,              shiftview,        { .i = -1 } },
-	{ MODKEY,                                      Key_semicolon,      shiftview,        { .i = 1 } },
-	{ MODKEY|WLR_MODIFIER_SHIFT,                   Key_c,              killclient,       {0} },
-	{ MODKEY,                                      Key_t,              setlayout,        {.v = &layouts[0]} },
-	{ MODKEY,                                      Key_f,              setlayout,        {.v = &layouts[1]} },
-	{ MODKEY,                                      Key_m,              setlayout,        {.v = &layouts[2]} },
-	{ MODKEY,                                      Key_u,              setlayout,        {.v = &layouts[3]} },
-	{ MODKEY,                                      Key_o,              setlayout,        {.v = &layouts[4]} },
-	{ MODKEY,                                      Key_space,          setlayout,        {0} },
-	{ MODKEY|WLR_MODIFIER_SHIFT,                   Key_space,          togglefloating,   {0} },
-	{ MODKEY,                                      Key_e,              togglefullscreen, {0} },
-	{ MODKEY,                                      Key_0,              view,             {.ui = ~0} },
-	{ MODKEY|WLR_MODIFIER_SHIFT,                   Key_0,              tag,              {.ui = ~0} },
-	{ MODKEY,                                      Key_comma,          focusmon,         {.i = WLR_DIRECTION_LEFT} },
-	{ MODKEY,                                      Key_period,         focusmon,         {.i = WLR_DIRECTION_RIGHT} },
-	{ MODKEY|WLR_MODIFIER_SHIFT,                   Key_comma,          tagmon,           {.i = WLR_DIRECTION_LEFT} },
-	{ MODKEY|WLR_MODIFIER_SHIFT,                   Key_period,         tagmon,           {.i = WLR_DIRECTION_RIGHT} },
-	TAGKEYS(                     Key_1,                       0),
-	TAGKEYS(                     Key_2,                       1),
-	TAGKEYS(                     Key_3,                       2),
-	TAGKEYS(                     Key_4,                       3),
-	TAGKEYS(                     Key_5,                       4),
-	TAGKEYS(                     Key_6,                       5),
-	TAGKEYS(                     Key_7,                       6),
-	TAGKEYS(                     Key_8,                       7),
-	TAGKEYS(                     Key_9,                       8),
-	{ MODKEY|WLR_MODIFIER_SHIFT, Key_q,       quit,           {0} },
+	/* modifier           key                         function          argument */
+    TAGKEYS(              Key_1,                                        0),
+    TAGKEYS(              Key_2,                                        1),
+    TAGKEYS(              Key_3,                                        2),
+    TAGKEYS(              Key_4,                                        3),
+    TAGKEYS(              Key_5,                                        4),
+    TAGKEYS(              Key_6,                                        5),
+    TAGKEYS(              Key_7,                                        6),
+    TAGKEYS(              Key_8,                                        7),
+    TAGKEYS(              Key_9,                                        8),
+    { SUPER,              Key_0,                        view,             {.ui = ~0} },
+	{ SUPER|SHIFT,        Key_0,                        tag,              {.ui = ~0} },
+	{ SUPER,		      Key_minus,	                spawn,		       SHCMD("pamixer -d 5; kill -44 $(pidof someblocks)") },
+	{ SUPER|SHIFT,		  Key_minus,	                spawn,		       SHCMD("pamixer -d 15; kill -44 $(pidof someblocks)") },
+	{ SUPER,			  Key_equal,	                spawn,		       SHCMD("pamixer -i 5; kill -44 $(pidof someblocks)") },
+	{ SUPER|SHIFT,		  Key_equal,	                spawn,		       SHCMD("pamixer -i 15; kill -44 $(pidof someblocks)") },
+	{ SUPER,			  Key_BackSpace,	            spawn,		       {.v = (const char*[]){ "sysact", NULL } } },
+	{ SUPER|SHIFT,		  Key_BackSpace,	            spawn,		       {.v = (const char*[]){ "sysact", NULL } } },
 
-	/* Ctrl-Alt-Backspace and Ctrl-Alt-Fx used to be handled by X server */
-	{ WLR_MODIFIER_CTRL|WLR_MODIFIER_ALT,Key_BackSpace, quit, {0} },
-#define CHVT(KEY,n) { WLR_MODIFIER_CTRL|WLR_MODIFIER_ALT, KEY, chvt, {.ui = (n)} }
-	/* Ctrl-Alt-Fx is used to switch to another VT, if you don't know what a VT is
-	 * do not remove them.
-	 */
-	CHVT(Key_F1, 1), CHVT(Key_F2,  2),  CHVT(Key_F3,  3),  CHVT(Key_F4,  4),
-	CHVT(Key_F5, 5), CHVT(Key_F6,  6),  CHVT(Key_F7,  7),  CHVT(Key_F8,  8),
-	CHVT(Key_F9, 9), CHVT(Key_F10, 10), CHVT(Key_F11, 11), CHVT(Key_F12, 12),
+    { SUPER,              Key_Tab,                      view,             {0} },
+    { SUPER,              Key_q,                        killclient,       {0} },
+    { SUPER|SHIFT,        Key_q,                        quit,             {0} },
+    { SUPER,			  Key_w,		                spawn,		       {.v = (const char*[]){ BROWSER, NULL } } },
+    { SUPER|SHIFT,		  Key_w,		                spawn,		       {.v = (const char*[]){ TERMINAL, "-e", "nmtui", NULL } } },
+	{ SUPER,			  Key_f,		                spawn,		       {.v = (const char*[]){ TERMINAL, "-e", "lf", NULL } } },
+	{ SUPER,		      Key_r,		                spawn,		       {.v = (const char*[]){ TERMINAL, "-e", "htop", NULL } } },
+    { SUPER,              Key_t,                        setlayout,        {.v = &layouts[0]} },
+    { SUPER|SHIFT,        Key_f,                        setlayout,        {.v = &layouts[1]} },
+    { SUPER,              Key_m,                        setlayout,        {.v = &layouts[2]} },
+    { SUPER,              Key_u,                        setlayout,        {.v = &layouts[3]} },
+    { SUPER,              Key_o,                        setlayout,        {.v = &layouts[4]} },
+    { SUPER,              Key_i,                        incnmaster,       {.i = +1} },
+    { SUPER,              Key_d,                        incnmaster,       {.i = -1} },
+	{ SUPER|ALT,		  Key_p,			            spawn,		       {.v = (const char*[]){ "mpc", "toggle", NULL } } },
+	{ SUPER|SHIFT,		  Key_p,			            spawn,		       SHCMD("mpc pause; pauseallmpv") },
+	{ SUPER,			  Key_bracketleft,	            spawn,		       {.v = (const char*[]){ "mpc", "seek", "-10", NULL } } },
+	{ SUPER|SHIFT,		  Key_bracketleft,	            spawn,		       {.v = (const char*[]){ "mpc", "seek", "-60", NULL } } },
+	{ SUPER,			  Key_bracketright,	            spawn,		       {.v = (const char*[]){ "mpc", "seek", "+10", NULL } } },
+	{ SUPER|SHIFT,		  Key_bracketright,	            spawn,		       {.v = (const char*[]){ "mpc", "seek", "+60", NULL } } },
+	{ SUPER,			  Key_backslash,	            view,		       {0} },
+	{ SUPER,			  Key_a,		                togglegaps,       {0} },
+	{ SUPER|SHIFT,		  Key_a,		                defaultgaps,      {0} },
+    { SUPER,              Key_p,                        spawn,            {.v = menucmd} },
+    { SUPER,              Key_Return,                   spawn,            {.v = termcmd} },
+    { SUPER,              Key_g,                        shiftview,        { .i = -1 } },
+    { SUPER,              Key_semicolon,                shiftview,        { .i = 1 } },
+
+    { SUPER,              Key_b,                        togglebar,        {0}},
+    { SUPER,              Key_j,                        focusstack,       {.i = +1} },
+    { SUPER,              Key_k,                        focusstack,       {.i = -1} },
+    { SUPER|SHIFT,        Key_j,                        movestack,        {.i = +1} },
+    { SUPER|SHIFT,        Key_k,                        movestack,        {.i = -1} },
+    { SUPER,              Key_h,                        setmfact,         {.f = -0.05f} },
+    { SUPER,              Key_l,                        setmfact,         {.f = +0.05f} },
+
+	{ SUPER,			  Key_z,		                incgaps,	       {.i = +3 } },
+	{ SUPER,			  Key_x,		                incgaps,	       {.i = -3 } },
+
+	{ SUPER|SHIFT,		  Key_n,		                spawn,		       SHCMD(TERMINAL " -e newsboat ; pkill -RTMIN+6 someblocks") },
+	{ SUPER,			  Key_m,		                spawn,		       {.v = (const char*[]){ TERMINAL, "-e", "ncmpcpp", NULL } } },
+	{ SUPER|SHIFT,		  Key_m,		                spawn,		       SHCMD("wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle; kill -44 $(pidof someblocks)") },
+	{ SUPER,			  Key_comma,	                spawn,		       {.v = (const char*[]){ "mpc", "prev", NULL } } },
+	{ SUPER|SHIFT,		  Key_comma,	                spawn,		       {.v = (const char*[]){ "mpc", "seek", "0%", NULL } } },
+	{ SUPER,			  Key_period,	                spawn,		       {.v = (const char*[]){ "mpc", "next", NULL } } },
+	{ SUPER|SHIFT,		  Key_period,	                spawn,		       {.v = (const char*[]){ "mpc", "repeat", NULL } } },
+
+    { SUPER|SHIFT,        Key_space,                    togglefloating,   {0} },
+    { SUPER,              Key_e,                        togglefullscreen, {0} },
+    { SUPER,              Key_comma,                    focusmon,         {.i = WLR_DIRECTION_LEFT} },
+    { SUPER,              Key_period,                   focusmon,         {.i = WLR_DIRECTION_RIGHT} },
+    { SUPER|SHIFT,        Key_comma,                    tagmon,           {.i = WLR_DIRECTION_LEFT} },
+    { SUPER|SHIFT,        Key_period,                   tagmon,           {.i = WLR_DIRECTION_RIGHT} },
+
+    { 0,		          Key_Print,	                spawn,		{.v = (const char*[]){ "screenshot", NULL } } },
+
+    /* { SUPER,		      Key_F1,		                spawn,		SHCMD("groff -mom /usr/local/share/dwm/larbs.mom -Tpdf | zathura -") }, */
+    /* { SUPER,		      Key_F2,		                spawn,		{.v = (const char*[]){ "tutorialvids", NULL } } }, */
+    /* { SUPER,		      Key_F3,		                spawn,		{.v = (const char*[]){ "displayselect", NULL } } }, */
+    { SUPER,		      Key_F4,		                spawn,		SHCMD("footclient -e pulsemixer; kill -44 $(pidof someblocks)") },
+    /* { SUPER,		      Key_F5,		                xrdb,		{.v = NULL } }, */
+    { SUPER,		      Key_F6,		                spawn,		{.v = (const char*[]){ "torwrap", NULL } } },
+    { SUPER,		      Key_F7,		                spawn,		{.v = (const char*[]){ "td-toggle", NULL } } },
+    /* { SUPER,		      Key_F8,		                spawn,		{.v = (const char*[]){ "mailsync", NULL } } }, */
+    { SUPER,		      Key_F9,		                spawn,		{.v = (const char*[]){ "mounter", NULL } } },
+    { SUPER,		      Key_F10,		                spawn,		{.v = (const char*[]){ "unmounter", NULL } } },
+    { SUPER,		      Key_F11,		                spawn,		SHCMD("mpv --untimed --no-cache --no-osc --no-input-default-bindings --profile=low-latency --input-conf=/dev/null --title=webcam $(ls /dev/video[0,2,4,6,8] | tail -n 1)") },
+    { SUPER,		      Key_F12,		                spawn,		SHCMD("remaps") },
+
+    /* { 0,               Key_XF86PowerOff,             spawn,      {.v = (const char*[]){ "sysact", NULL } } }, */
+    { 0,                  Key_XF86AudioMute,		    spawn,		SHCMD("pamixer -t; kill -44 $(pidof someblocks)") },
+    { 0,                  Key_XF86AudioRaiseVolume,	    spawn,		SHCMD("pamixer -i 3; kill -44 $(pidof someblocks)") },
+    { 0,                  Key_XF86AudioLowerVolume,	    spawn,		SHCMD("pamixer -d 3; kill -44 $(pidof someblocks)") },
+    { 0,                  Key_XF86AudioMicMute,	        spawn,		SHCMD("pactl set-source-mute @DEFAULT_SOURCE@ toggle") },
+    { 0,                  Key_XF86MonBrightnessUp,	    spawn,		{.v = (const char*[]){ "light", "-A", "15", NULL } } },
+    { 0,                  Key_XF86MonBrightnessDown,	spawn,		{.v = (const char*[]){ "light", "-U", "15", NULL } } },
+
+
+    /* Ctrl-Alt-Backspace and Ctrl-Alt-Fx used to be handled by X server */
+    { CTRL|WLR_MODIFIER_ALT,Key_BackSpace, quit, {0} },
+#define CHVT(KEY,n) { CTRL|WLR_MODIFIER_ALT, KEY, chvt, {.ui = (n)} }
+    /* Ctrl-Alt-Fx is used to switch to another VT, if you don't know what a VT is
+     * do not remove them.
+     */
+    CHVT(Key_F1, 1), CHVT(Key_F2,  2),  CHVT(Key_F3,  3),  CHVT(Key_F4,  4),
+    CHVT(Key_F5, 5), CHVT(Key_F6,  6),  CHVT(Key_F7,  7),  CHVT(Key_F8,  8),
+    CHVT(Key_F9, 9), CHVT(Key_F10, 10), CHVT(Key_F11, 11), CHVT(Key_F12, 12),
 };
 
 static const Button buttons[] = {
-  {}
-	/* { MODKEY, BTN_LEFT,   moveresize,     {.ui = CurMove} }, */
-	/* { MODKEY, BTN_MIDDLE, togglefloating, {0} }, */
-	/* { MODKEY, BTN_RIGHT,  moveresize,     {.ui = CurResize} }, */
+    {}
+    /* { SUPER, BTN_LEFT,   moveresize,     {.ui = CurMove} }, */
+    /* { SUPER, BTN_MIDDLE, togglefloating, {0} }, */
+    /* { SUPER, BTN_RIGHT,  moveresize,     {.ui = CurResize} }, */
 };
